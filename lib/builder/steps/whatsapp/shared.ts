@@ -3,6 +3,8 @@ import "server-only";
 import { getWhatsAppCredentials } from "@/lib/whatsapp-credentials";
 import { normalizePhoneNumber } from "@/lib/phone-formatter";
 import { fetchWithTimeout, safeJson, safeText } from "@/lib/server-http";
+// Contorno temporário do bug 500 da Meta (28/08/2026) — ver lib/whatsapp/graph-form.ts
+import { toGraphFormBody } from "@/lib/whatsapp/graph-form";
 
 type WhatsAppCredentials = {
   accessToken: string;
@@ -68,9 +70,9 @@ export async function sendWhatsAppPayload(
       method: "POST",
       headers: {
         Authorization: `Bearer ${credentials.accessToken}`,
-        "Content-Type": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: JSON.stringify(payload),
+      body: toGraphFormBody(payload as Record<string, unknown>),
       timeoutMs: 8000,
     }
   );

@@ -1,8 +1,11 @@
 /**
  * WhatsApp Status Message Builders
- * 
+ *
  * Builders for typing indicators and mark as read actions
  */
+
+// Contorno temporário do bug 500 da Meta (28/08/2026) — ver lib/whatsapp/graph-form.ts
+import { toGraphFormBody } from '@/lib/whatsapp/graph-form'
 
 // =============================================================================
 // TYPING INDICATOR
@@ -95,9 +98,9 @@ export async function sendMarkAsRead(
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify(payload),
+        body: toGraphFormBody(payload as unknown as Record<string, unknown>),
       }
     )
     

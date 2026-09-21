@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getWhatsAppCredentials } from '@/lib/whatsapp-credentials';
 import { normalizePhoneNumber } from '@/lib/phone-formatter';
 import { fetchWithTimeout, safeJson } from '@/lib/server-http';
+// Contorno temporário do bug 500 da Meta (28/08/2026) — ver lib/whatsapp/graph-form.ts
+import { toGraphFormBody } from '@/lib/whatsapp/graph-form';
 
 const META_API_VERSION = 'v24.0';
 
@@ -165,25 +167,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Enviar mensagem usando o template encontrado
+    const payload = {
+      messaging_product: 'whatsapp',
+      to: normalizedPhone,
+      type: 'template',
+      template: {
+        name: template.name,
+        language: {
+          code: template.language,
+        },
+      },
+    };
     const response = await fetch(
       `https://graph.facebook.com/${META_API_VERSION}/${phoneNumberId}/messages`,
       {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          to: normalizedPhone,
-          type: 'template',
-          template: {
-            name: template.name,
-            language: {
-              code: template.language,
-            },
-          },
-        }),
+        body: toGraphFormBody(payload),
       }
     );
 

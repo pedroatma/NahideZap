@@ -30,6 +30,8 @@ import { shouldProcessWhatsAppStatusEvent } from '@/lib/whatsapp-webhook-dedupe'
 
 
 import { getWhatsAppCredentials } from '@/lib/whatsapp-credentials'
+// Contorno temporário do bug 500 da Meta (28/08/2026) — ver lib/whatsapp/graph-form.ts
+import { toGraphFormBody } from '@/lib/whatsapp/graph-form'
 import { applyFlowMappingToContact } from '@/lib/flow-mapping'
 import { settingsDb } from '@/lib/supabase-db'
 import { ensureWorkflowRecord, getCompanyId } from '@/lib/builder/workflow-db'
@@ -1543,18 +1545,19 @@ export async function POST(request: NextRequest) {
                     try {
                     } catch {}
 
+                    const autoReplyPayload = {
+                      messaging_product: 'whatsapp',
+                      to: normalizedFrom,
+                      type: 'text',
+                      text: { body: parts.join('\n') },
+                    }
                     await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
                       method: 'POST',
                       headers: {
                         Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded',
                       },
-                      body: JSON.stringify({
-                        messaging_product: 'whatsapp',
-                        to: normalizedFrom,
-                        type: 'text',
-                        text: { body: parts.join('\n') },
-                      }),
+                      body: toGraphFormBody(autoReplyPayload),
                     })
                   }
 
