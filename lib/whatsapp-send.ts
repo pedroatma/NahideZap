@@ -7,6 +7,8 @@ import { getWhatsAppCredentials, type WhatsAppCredentials } from '@/lib/whatsapp
 import { buildTextMessage } from '@/lib/whatsapp/text'
 import { fetchWithTimeout, safeJson, safeText } from '@/lib/server-http'
 import { normalizePhoneNumber } from '@/lib/phone-formatter'
+// Contorno temporário do bug 500 da Meta (28/08/2026) — ver lib/whatsapp/graph-form.ts
+import { toGraphFormBody } from '@/lib/whatsapp/graph-form'
 
 export interface SendWhatsAppMessageOptions {
   to: string
@@ -74,9 +76,9 @@ export async function sendWhatsAppMessage(
         method: 'POST',
         headers: {
           Authorization: `Bearer ${credentials.accessToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify(payload),
+        body: toGraphFormBody(payload),
         timeoutMs: 8000,
       }
     )
@@ -186,6 +188,15 @@ export async function sendTypingIndicator(
     return { success: false, error: 'WhatsApp credentials not configured' }
   }
 
+  const payload = {
+    messaging_product: 'whatsapp',
+    status: 'read',
+    message_id: options.messageId,
+    typing_indicator: {
+      type: 'text',
+    },
+  }
+
   try {
     const response = await fetchWithTimeout(
       `https://graph.facebook.com/v24.0/${credentials.phoneNumberId}/messages`,
@@ -193,16 +204,9 @@ export async function sendTypingIndicator(
         method: 'POST',
         headers: {
           Authorization: `Bearer ${credentials.accessToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          status: 'read',
-          message_id: options.messageId,
-          typing_indicator: {
-            type: 'text',
-          },
-        }),
+        body: toGraphFormBody(payload),
         timeoutMs: 5000,
       }
     )
@@ -262,6 +266,17 @@ export async function sendReaction(
     return { success: false, error: `Invalid phone number: ${options.to}` }
   }
 
+  const payload = {
+    messaging_product: 'whatsapp',
+    recipient_type: 'individual',
+    to: normalizedTo.replace('+', ''), // API expects without +
+    type: 'reaction',
+    reaction: {
+      message_id: options.messageId,
+      emoji: options.emoji,
+    },
+  }
+
   try {
     const response = await fetchWithTimeout(
       `https://graph.facebook.com/v24.0/${credentials.phoneNumberId}/messages`,
@@ -269,18 +284,9 @@ export async function sendReaction(
         method: 'POST',
         headers: {
           Authorization: `Bearer ${credentials.accessToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
-          to: normalizedTo.replace('+', ''), // API expects without +
-          type: 'reaction',
-          reaction: {
-            message_id: options.messageId,
-            emoji: options.emoji,
-          },
-        }),
+        body: toGraphFormBody(payload),
         timeoutMs: 5000,
       }
     )
@@ -393,9 +399,9 @@ export async function sendFlowMessage(
         method: 'POST',
         headers: {
           Authorization: `Bearer ${credentials.accessToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify(payload),
+        body: toGraphFormBody(payload),
         timeoutMs: 8000,
       }
     )

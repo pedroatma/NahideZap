@@ -26,7 +26,20 @@ const META_API_BASE = 'https://graph.facebook.com/v24.0'
 const sendMessageHandler = http.post(
   `${META_API_BASE}/:phoneNumberId/messages`,
   async ({ request }) => {
-    const body = (await request.json()) as Record<string, unknown>
+    // Contorno temporário do bug 500 da Meta (28/08/2026): o POST /messages agora
+    // vai como application/x-www-form-urlencoded (ver lib/whatsapp/graph-form.ts).
+    // Decodifica o corpo revertendo toGraphFormBody — escalares ficam string,
+    // objetos/arrays voltam via JSON.parse. Quando a Meta corrigir e o envio voltar
+    // para JSON, trocar de volta para `await request.json()`.
+    const params = new URLSearchParams(await request.text())
+    const body: Record<string, unknown> = {}
+    for (const [key, value] of params) {
+      try {
+        body[key] = JSON.parse(value)
+      } catch {
+        body[key] = value
+      }
+    }
     const to = body.to as string || '5511999999999'
     const wamid = `wamid.HBgNNTUxMTk5OTk5OTk5FQIAERgSMEE0${Date.now()}`
 

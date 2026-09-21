@@ -8,6 +8,8 @@ import { supabase } from '@/lib/supabase'
 import { normalizePhoneNumber } from '@/lib/phone-formatter'
 import { buildFlowMessage } from '@/lib/whatsapp/flows'
 import { fetchWithTimeout, safeJson } from '@/lib/server-http'
+// Contorno temporário do bug 500 da Meta (28/08/2026) — ver lib/whatsapp/graph-form.ts
+import { toGraphFormBody } from '@/lib/whatsapp/graph-form'
 
 export async function POST(request: Request) {
   try {
@@ -118,9 +120,9 @@ export async function POST(request: Request) {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${credentials.accessToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify(payload),
+        body: toGraphFormBody(payload as unknown as Record<string, unknown>),
         timeoutMs: 8000,
       }
     )

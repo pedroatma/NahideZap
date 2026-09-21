@@ -16,6 +16,8 @@ import { createCampaignProgressBroadcaster, broadcastCampaignPhase } from '@/lib
 import { createHash } from 'crypto'
 import { getWhatsAppCredentials } from '@/lib/whatsapp-credentials'
 import { fetchWithTimeout, safeJson } from '@/lib/server-http'
+// Contorno temporário do bug 500 da Meta (28/08/2026) — ver lib/whatsapp/graph-form.ts
+import { toGraphFormBody } from '@/lib/whatsapp/graph-form'
 
 function hashConfig(input: unknown): string {
   // Observação: o objetivo é agrupar configs; não precisamos de criptografia forte aqui.
@@ -1532,9 +1534,9 @@ const workflowHandler = serve<CampaignWorkflowInput>(
                   method: 'POST',
                   headers: {
                     'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded',
                   },
-                  body: JSON.stringify(whatsappPayload),
+                  body: toGraphFormBody(whatsappPayload),
                   signal: controller.signal,
                 }
               )
@@ -1676,9 +1678,9 @@ const workflowHandler = serve<CampaignWorkflowInput>(
                         method: 'POST',
                         headers: {
                           Authorization: `Bearer ${accessToken}`,
-                          'Content-Type': 'application/json',
+                          'Content-Type': 'application/x-www-form-urlencoded',
                         },
-                        body: JSON.stringify(retryPayload),
+                        body: toGraphFormBody(retryPayload),
                         signal: controller2.signal,
                       })
                       data2 = await response2.json()
@@ -1809,9 +1811,9 @@ const workflowHandler = serve<CampaignWorkflowInput>(
                         method: 'POST',
                         headers: {
                           Authorization: `Bearer ${accessToken}`,
-                          'Content-Type': 'application/json',
+                          'Content-Type': 'application/x-www-form-urlencoded',
                         },
-                        body: JSON.stringify(retryPayload),
+                        body: toGraphFormBody(retryPayload),
                         signal: controller3.signal,
                       })
                       data3 = await response3.json()
